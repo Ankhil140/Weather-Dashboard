@@ -230,3 +230,57 @@ header p {
     grid-template-columns: 1fr;
   }
 }
+
+/* Unit Toggle & Saved Locs styling */
+.toggle-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.toggle-btn.active {
+  background: var(--accent-color);
+  color: white;
+  box-shadow: 0 0 10px rgba(79, 172, 254, 0.4);
+}
+
+.saved-loc-chip {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--text-primary);
+  padding: 0.4rem 0.8rem;
+  border-radius: 16px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.saved-loc-chip:hover {
+  background: rgba(79, 172, 254, 0.2);
+  border-color: rgba(79, 172, 254, 0.4);
+}
+
+.save-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0.3rem;
+  border-radius: 50%;
+  transition: transform 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.save-btn:hover {
+  transform: scale(1.1);
+  background: rgba(255, 255, 255, 0.05);
+}

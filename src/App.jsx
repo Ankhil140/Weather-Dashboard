@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { 
-  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer 
+  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend 
 } from 'recharts';
-import { ThermometerSun, AlertTriangle, TrendingUp, Activity, Cpu, Search, MapPin, Wind } from 'lucide-react';
+import { ThermometerSun, AlertTriangle, TrendingUp, Activity, Cpu, Search, MapPin, Wind, Star } from 'lucide-react';
 import './index.css';
 
 function App() {
@@ -22,8 +22,19 @@ function App() {
 
   const [citySearch, setCitySearch] = useState('');
   const [localWeather, setLocalWeather] = useState(null);
+  const [localForecast, setLocalForecast] = useState([]);
   const [searching, setSearching] = useState(false);
   const [searchError, setSearchError] = useState('');
+  
+  const [unit, setUnit] = useState('F'); 
+  const [savedLocs, setSavedLocs] = useState(() => {
+    const saved = localStorage.getItem('weatherSavedLocations');
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  useEffect(() => {
+    localStorage.setItem('weatherSavedLocations', JSON.stringify(savedLocs));
+  }, [savedLocs]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -57,30 +68,33 @@ function App() {
     }
   };
 
-  const handleInputChange = (e) => {
-    setInputs({
-      ...inputs,
-      [e.target.name]: parseFloat(e.target.value) || 0
-    });
-  };
-
-  const handleCitySearch = async (e) => {
-    e.preventDefault();
-    if(!citySearch.trim()) return;
+  const fetchCityWeather = async (cityName) => {
+    if(!cityName.trim()) return;
     setSearching(true);
     setSearchError('');
     try {
-      const geoRes = await axios.get(`https://geocoding-api.open-meteo.com/v1/search?name=${citySearch}&count=1&language=en&format=json`);
+      const geoRes = await axios.get(`https://geocoding-api.open-meteo.com/v1/search?name=${cityName}&count=1&language=en&format=json`);
       if(geoRes.data.results && geoRes.data.results.length > 0) {
         const { latitude, longitude, name, country } = geoRes.data.results[0];
-        const weatherRes = await axios.get(`https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current_weather=true&temperature_unit=fahrenheit&windspeed_unit=mph`);
-        if(weatherRes.data.current_weather) {
+        
+        // Fetch current and 10 days (5 past, 6 forecast to make it 11 total centering on today)
+        const weatherRes = await axios.get(`https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current_weather=true&temperature_unit=fahrenheit&windspeed_unit=mph&daily=temperature_2m_max,temperature_2m_min&past_days=5&forecast_days=6`);
+        
+        if(weatherRes.data.current_weather && weatherRes.data.daily) {
           setLocalWeather({
             temperature: weatherRes.data.current_weather.temperature,
             windspeed: weatherRes.data.current_weather.windspeed,
             name,
             country
           });
+          
+          const daily = weatherRes.data.daily;
+          const forecastArray = daily.time.map((t, idx) => ({
+            date: t,
+            maxF: daily.temperature_2m_max[idx],
+            minF: daily.temperature_2m_min[idx]
+          }));
+          setLocalForecast(forecastArray);
         }
       } else {
         setSearchError('City not found');
@@ -92,11 +106,57 @@ function App() {
     }
   };
 
+  const handleCitySearch = (e) => {
+    e.preventDefault();
+    fetchCityWeather(citySearch);
+  };
+
+  const handleInputChange = (e) => {
+    setInputs({
+      ...inputs,
+      [e.target.name]: parseFloat(e.target.value) || 0
+    });
+  };
+
+  const toggleSaveLocation = () => {
+    if(!localWeather) return;
+    const locName = `${localWeather.name}, ${localWeather.country}`;
+    if(savedLocs.includes(locName)) {
+      setSavedLocs(savedLocs.filter(l => l !== locName));
+    } else {
+      setSavedLocs([...savedLocs, locName]);
+    }
+  };
+
+  const conversion = (valF) => unit === 'F' ? valF : (valF - 32) * 5/9;
+  const dispUnit = unit === 'F' ? '°F' : '°C';
+  const windUnit = unit === 'F' ? 'mph' : 'km/h';
+  const windConv = (valMph) => unit === 'F' ? valMph : valMph * 1.60934;
+
+  const displayData = data.map(d => ({
+    ...d,
+    displayAvg: conversion(d.LandAndOceanAverageTemperature)
+  }));
+  
+  const displayForecast = localForecast.map(d => ({
+    ...d,
+    max: conversion(d.maxF),
+    min: conversion(d.minF)
+  }));
+  
+  const isSaved = localWeather && savedLocs.includes(`${localWeather.name}, ${localWeather.country}`);
+
   return (
     <div className="dashboard-container">
-      <header className="glass-panel">
-        <h1>Climate Dashboard <span style={{fontSize: '1.2rem', fontWeight: 'normal', color: 'var(--text-secondary)'}}>using Machine Learning</span></h1>
-        <p>Premium Real-Time Weather Prediction & Live Data</p>
+      <header className="glass-panel" style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem'}}>
+        <div>
+          <h1>Climate Dashboard <span style={{fontSize: '1.2rem', fontWeight: 'normal', color: 'var(--text-secondary)'}}>using Machine Learning</span></h1>
+          <p>Premium Real-Time Weather Prediction & Live Data</p>
+        </div>
+        <div className="unit-toggle" style={{display: 'flex', background: 'rgba(0,0,0,0.3)', borderRadius: '8px', padding: '4px'}}>
+          <button className={`toggle-btn ${unit === 'C' ? 'active' : ''}`} onClick={() => setUnit('C')}>°C</button>
+          <button className={`toggle-btn ${unit === 'F' ? 'active' : ''}`} onClick={() => setUnit('F')}>°F</button>
+        </div>
       </header>
 
       <div className="kpi-grid">
@@ -106,7 +166,7 @@ function App() {
           </div>
           <div className="kpi-content">
              <h3>Latest Avg Temp</h3>
-             <div className="value">{loading ? '...' : `${latestAvg.toFixed(2)}°F`}</div>
+             <div className="value">{loading ? '...' : `${conversion(latestAvg).toFixed(2)}${dispUnit}`}</div>
           </div>
         </div>
         
@@ -126,56 +186,113 @@ function App() {
           </div>
           <div className="kpi-content">
              <h3>Baseline MAE Gap</h3>
-             <div className="value">1.78°F</div>
+             <div className="value">{conversion(1.78).toFixed(2)}{dispUnit}</div>
           </div>
         </div>
       </div>
 
       <div className="main-content">
-        <div className="glass-panel chart-section">
-          <div className="chart-header">
-            <h2>Historical Temperatures (1850+)</h2>
-            <div style={{color: "var(--text-secondary)"}}>Land & Ocean Average</div>
+        <div className="left-charts">
+          
+          <div className="glass-panel chart-section" style={{marginBottom: '1.5rem'}}>
+            <div className="chart-header">
+              <h2>Historical Temperatures (1850+)</h2>
+              <div style={{color: "var(--text-secondary)"}}>Land & Ocean Average</div>
+            </div>
+            <div style={{ width: '100%', height: 300 }}>
+              {loading ? (
+                <div style={{height: "100%", display: "flex", alignItems: "center", justifyContent: "center"}}>Loading historical data...</div>
+              ) : (
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={displayData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id="colorTemp" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#4facfe" stopOpacity={0.4}/>
+                        <stop offset="95%" stopColor="#4facfe" stopOpacity={0}/>
+                      </linearGradient>
+                    </defs>
+                    <XAxis dataKey="Year" stroke="var(--text-secondary)" tick={{fontSize: 12}} />
+                    <YAxis domain={['auto', 'auto']} stroke="var(--text-secondary)" tick={{fontSize: 12}} />
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--glass-border)" vertical={false} />
+                    <Tooltip 
+                      contentStyle={{ backgroundColor: 'rgba(11, 12, 16, 0.9)', border: '1px solid var(--glass-border)', borderRadius: '8px' }}
+                      itemStyle={{ color: '#fff' }}
+                      formatter={(val) => [val.toFixed(2) + dispUnit, "Global Avg"]}
+                    />
+                    <Area 
+                      type="monotone" 
+                      dataKey="displayAvg" 
+                      name="Avg"
+                      stroke="#00f2fe" 
+                      strokeWidth={3}
+                      fillOpacity={1} 
+                      fill="url(#colorTemp)" 
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              )}
+            </div>
           </div>
-          <div style={{ width: '100%', height: 400 }}>
-            {loading ? (
-              <div style={{height: "100%", display: "flex", alignItems: "center", justifyContent: "center"}}>Loading historical data...</div>
-            ) : (
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={data} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
-                  <defs>
-                    <linearGradient id="colorTemp" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#4facfe" stopOpacity={0.4}/>
-                      <stop offset="95%" stopColor="#4facfe" stopOpacity={0}/>
-                    </linearGradient>
-                  </defs>
-                  <XAxis dataKey="Year" stroke="var(--text-secondary)" tick={{fontSize: 12}} />
-                  <YAxis domain={['auto', 'auto']} stroke="var(--text-secondary)" tick={{fontSize: 12}} />
-                  <CartesianGrid strokeDasharray="3 3" stroke="var(--glass-border)" vertical={false} />
-                  <Tooltip 
-                    contentStyle={{ backgroundColor: 'rgba(11, 12, 16, 0.9)', border: '1px solid var(--glass-border)', borderRadius: '8px' }}
-                    itemStyle={{ color: '#fff' }}
-                  />
-                  <Area 
-                    type="monotone" 
-                    dataKey="LandAndOceanAverageTemperature" 
-                    name="Avg (°F)"
-                    stroke="#00f2fe" 
-                    strokeWidth={3}
-                    fillOpacity={1} 
-                    fill="url(#colorTemp)" 
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
-            )}
-          </div>
+
+          {localForecast.length > 0 && (
+            <div className="glass-panel chart-section" style={{animation: 'fadeIn 0.5s ease'}}>
+              <div className="chart-header">
+                <h2>10-Day Weather Forecast</h2>
+                <div style={{color: "var(--text-secondary)"}}>5 Days Past & 5 Days Future for {localWeather?.name}</div>
+              </div>
+              <div style={{ width: '100%', height: 300 }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={displayForecast} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id="colorMax" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#ff758c" stopOpacity={0.4}/>
+                        <stop offset="95%" stopColor="#ff758c" stopOpacity={0}/>
+                      </linearGradient>
+                      <linearGradient id="colorMin" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#4facfe" stopOpacity={0.4}/>
+                        <stop offset="95%" stopColor="#4facfe" stopOpacity={0}/>
+                      </linearGradient>
+                    </defs>
+                    <XAxis dataKey="date" stroke="var(--text-secondary)" tick={{fontSize: 12}} />
+                    <YAxis domain={['auto', 'auto']} stroke="var(--text-secondary)" tick={{fontSize: 12}} />
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--glass-border)" vertical={false} />
+                    <Tooltip 
+                      contentStyle={{ backgroundColor: 'rgba(11, 12, 16, 0.9)', border: '1px solid var(--glass-border)', borderRadius: '8px' }}
+                      itemStyle={{ color: '#fff' }}
+                      formatter={(val, name) => [val.toFixed(2) + dispUnit, name]}
+                    />
+                    <Legend />
+                    <Area 
+                      type="monotone" 
+                      dataKey="max" 
+                      name="Daily Max"
+                      stroke="#ff758c" 
+                      strokeWidth={3}
+                      fillOpacity={1} 
+                      fill="url(#colorMax)" 
+                    />
+                    <Area 
+                      type="monotone" 
+                      dataKey="min" 
+                      name="Daily Min"
+                      stroke="#4facfe" 
+                      strokeWidth={3}
+                      fillOpacity={1} 
+                      fill="url(#colorMin)" 
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="glass-panel" style={{display: "flex", flexDirection: "column", gap: "2rem"}}>
           <div className="city-search-section">
             <h2>Live Local Weather</h2>
             <p style={{color: "var(--text-secondary)", fontSize: "0.9rem", marginBottom: "1rem"}}>Get current conditions for any area.</p>
-            <form onSubmit={handleCitySearch} style={{display: "flex", gap: "0.5rem", marginBottom: "1.5rem"}}>
+            
+            <form onSubmit={handleCitySearch} style={{display: "flex", gap: "0.5rem", marginBottom: "1rem"}}>
               <input 
                 type="text" 
                 className="glass-input" 
@@ -190,24 +307,41 @@ function App() {
               </button>
             </form>
 
+            <div style={{display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '1.5rem'}}>
+              {savedLocs.map((loc, i) => (
+                <button 
+                  key={i} 
+                  className="saved-loc-chip" 
+                  onClick={() => {setCitySearch(loc.split(',')[0]); fetchCityWeather(loc.split(',')[0]);}}
+                >
+                  <MapPin size={12} /> {loc}
+                </button>
+              ))}
+            </div>
+
             {searchError && <p style={{color: "#ff6b6b", fontSize: "0.9rem", marginBottom: "1rem"}}>{searchError}</p>}
 
             {localWeather && (
               <div className="prediction-result" style={{marginTop: "0", background: "rgba(0, 242, 254, 0.1)", borderColor: "rgba(0, 242, 254, 0.3)"}}>
-                <div style={{display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem", marginBottom: "1rem"}}>
-                  <MapPin size={24} color="var(--accent-secondary)"/>
-                  <h3 style={{fontSize: "1.2rem"}}>{localWeather.name}, {localWeather.country}</h3>
+                <div style={{display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1rem"}}>
+                  <div style={{display: "flex", alignItems: "center", gap: "0.5rem"}}>
+                    <MapPin size={24} color="var(--accent-secondary)"/>
+                    <h3 style={{fontSize: "1.2rem", margin: 0}}>{localWeather.name}, {localWeather.country}</h3>
+                  </div>
+                  <button onClick={toggleSaveLocation} className="save-btn" title={isSaved ? "Unsave" : "Save Location"}>
+                    <Star size={24} fill={isSaved ? "gold" : "transparent"} color={isSaved ? "gold" : "var(--text-secondary)"} />
+                  </button>
                 </div>
                 <div style={{display: "flex", justifyContent: "space-around", alignItems: "center"}}>
                   <div>
                     <p style={{marginBottom: "0.2rem"}}>Current Temp</p>
-                    <h2 style={{fontSize: "2rem"}}>{localWeather.temperature}°F</h2>
+                    <h2 style={{fontSize: "2rem"}}>{conversion(localWeather.temperature).toFixed(1)}{dispUnit}</h2>
                   </div>
                   <div>
                     <p style={{marginBottom: "0.2rem", display: "flex", alignItems: "center", gap: "0.3rem"}}>
                       <Wind size={16} /> Wind
                     </p>
-                    <h2 style={{fontSize: "1.5rem", color: "var(--text-primary)"}}>{localWeather.windspeed} mph</h2>
+                    <h2 style={{fontSize: "1.5rem", color: "var(--text-primary)"}}>{windConv(localWeather.windspeed).toFixed(1)} {windUnit}</h2>
                   </div>
                 </div>
               </div>
@@ -264,12 +398,12 @@ function App() {
           {prediction !== null && (
             <div className="prediction-result">
               <p>Predicted Land & Ocean Avg</p>
-              <h2>{prediction.toFixed(2)}°F</h2>
+              <h2>{conversion(prediction).toFixed(2)}{dispUnit}</h2>
             </div>
           )}
         </div>
-        </div>
       </div>
+    </div>
     </div>
   );
 }
