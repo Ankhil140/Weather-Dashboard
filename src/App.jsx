@@ -33,13 +33,15 @@ function App() {
       if(geoRes.data.results && geoRes.data.results.length > 0) {
         const { latitude, longitude, name, country } = geoRes.data.results[0];
         
-        // Fetch current and 10 days (5 past, 6 forecast to make it 11 total centering on today)
-        const weatherRes = await axios.get(`https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current_weather=true&temperature_unit=fahrenheit&windspeed_unit=mph&daily=temperature_2m_max,temperature_2m_min&past_days=5&forecast_days=6`);
+        const weatherRes = await axios.get(`https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,wind_speed_10m,cloud_cover&temperature_unit=fahrenheit&windspeed_unit=mph&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max,sunshine_duration&past_days=5&forecast_days=6`);
         
-        if(weatherRes.data.current_weather && weatherRes.data.daily) {
+        if(weatherRes.data.current && weatherRes.data.daily) {
           setLocalWeather({
-            temperature: weatherRes.data.current_weather.temperature,
-            windspeed: weatherRes.data.current_weather.windspeed,
+            temperature: weatherRes.data.current.temperature_2m,
+            windspeed: weatherRes.data.current.wind_speed_10m,
+            cloudCover: weatherRes.data.current.cloud_cover,
+            precipProb: weatherRes.data.daily.precipitation_probability_max[5],
+            sunshine: weatherRes.data.daily.sunshine_duration[5] / 3600,
             name,
             country
           });
@@ -78,12 +80,15 @@ function App() {
         const name = bdRes.data.city || bdRes.data.locality || 'Current Location';
         const country = bdRes.data.countryName || '';
 
-        const weatherRes = await axios.get(`https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current_weather=true&temperature_unit=fahrenheit&windspeed_unit=mph&daily=temperature_2m_max,temperature_2m_min&past_days=5&forecast_days=6`);
+        const weatherRes = await axios.get(`https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,wind_speed_10m,cloud_cover&temperature_unit=fahrenheit&windspeed_unit=mph&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max,sunshine_duration&past_days=5&forecast_days=6`);
         
-        if(weatherRes.data.current_weather && weatherRes.data.daily) {
+        if(weatherRes.data.current && weatherRes.data.daily) {
           setLocalWeather({
-            temperature: weatherRes.data.current_weather.temperature,
-            windspeed: weatherRes.data.current_weather.windspeed,
+            temperature: weatherRes.data.current.temperature_2m,
+            windspeed: weatherRes.data.current.wind_speed_10m,
+            cloudCover: weatherRes.data.current.cloud_cover,
+            precipProb: weatherRes.data.daily.precipitation_probability_max[5],
+            sunshine: weatherRes.data.daily.sunshine_duration[5] / 3600,
             name,
             country
           });
@@ -253,16 +258,34 @@ function App() {
                     <Star size={24} fill={isSaved ? "gold" : "transparent"} color={isSaved ? "gold" : "var(--text-secondary)"} />
                   </button>
                 </div>
-                <div style={{display: "flex", justifyContent: "space-around", alignItems: "center"}}>
+                <div style={{display: "flex", justifyContent: "center", alignItems: "center", flexWrap: "wrap", gap: "2rem"}}>
                   <div>
-                    <p style={{marginBottom: "0.2rem"}}>Current Temp</p>
+                    <p style={{marginBottom: "0.2rem"}}>Temp</p>
                     <h2 style={{fontSize: "2rem"}}>{conversion(localWeather.temperature).toFixed(1)}{dispUnit}</h2>
                   </div>
                   <div>
                     <p style={{marginBottom: "0.2rem", display: "flex", alignItems: "center", gap: "0.3rem"}}>
-                      <Wind size={16} /> Wind
+                      Wind
                     </p>
                     <h2 style={{fontSize: "1.5rem", color: "var(--text-primary)"}}>{windConv(localWeather.windspeed).toFixed(1)} {windUnit}</h2>
+                  </div>
+                  <div>
+                    <p style={{marginBottom: "0.2rem", display: "flex", alignItems: "center", gap: "0.3rem"}}>
+                      Cloudy
+                    </p>
+                    <h2 style={{fontSize: "1.5rem", color: "var(--text-primary)"}}>{localWeather.cloudCover}%</h2>
+                  </div>
+                  <div>
+                    <p style={{marginBottom: "0.2rem", display: "flex", alignItems: "center", gap: "0.3rem"}}>
+                      Precipitation
+                    </p>
+                    <h2 style={{fontSize: "1.5rem", color: "var(--text-primary)"}}>{localWeather.precipProb}%</h2>
+                  </div>
+                  <div>
+                    <p style={{marginBottom: "0.2rem", display: "flex", alignItems: "center", gap: "0.3rem"}}>
+                      Bright Sun
+                    </p>
+                    <h2 style={{fontSize: "1.5rem", color: "var(--text-primary)"}}>{localWeather.sunshine ? localWeather.sunshine.toFixed(1) : '0'}h</h2>
                   </div>
                 </div>
               </div>
