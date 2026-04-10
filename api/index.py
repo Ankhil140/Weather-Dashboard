@@ -11,7 +11,7 @@ def c_to_f(celsius_temp):
     return (celsius_temp * 9/5) + 32
 
 def load_data():
-    csv_path = os.path.join(os.path.dirname(__file__), 'GlobalTemperatures.csv')
+    csv_path = os.path.join(os.path.dirname(__file__), 'Temperatures.csv')
     df = pd.read_csv(csv_path)
     
     # Process

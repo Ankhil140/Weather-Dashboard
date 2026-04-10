@@ -1,11 +1,11 @@
-# Global Climate Dashboard using Machine Learning
+# Climate Dashboard using Machine Learning
 
-This repository contains a full-stack, premium web application that implements a machine learning model to predict global temperatures using historical climate data. Initially based on the "Predict Weather with Machine Learning" tutorial, it has been expanded into a live Interactive Dashboard deployed on Vercel.
+This repository contains a full-stack, premium web application that implements a machine learning model to predict temperatures using historical climate data. Initially based on the "Predict Weather with Machine Learning" tutorial, it has been expanded into a live Interactive Dashboard deployed on Vercel.
 
 ## Project Overview
 
 The project demonstrates an end-to-end data science and full-stack workflow:
-1. **Machine Learning**: An exploratory Jupyter Notebook (`predict_weather.ipynb`) that cleans the `GlobalTemperatures.csv` dataset and trains a Random Forest Regressor to predict the `LandAndOceanAverageTemperature`.
+1. **Machine Learning**: An exploratory Jupyter Notebook (`predict_weather.ipynb`) that cleans the `Temperatures.csv` dataset and trains a Random Forest Regressor to predict the `LandAndOceanAverageTemperature`.
 2. **Serverless API**: A Python Flask backend (`/api`) that exposes live predictions and leverages `@vercel/python` for scalable deployment.
 3. **Live Dashboard**: A beautiful Vite/React frontend designed with premium Glassmorphism aesthetics that consumes both the ML predictions and live REST APIs (Open-Meteo) to provide real-time weather tracking.
 

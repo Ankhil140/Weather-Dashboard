@@ -95,7 +95,7 @@ function App() {
   return (
     <div className="dashboard-container">
       <header className="glass-panel">
-        <h1>Global Climate Dashboard <span style={{fontSize: '1.2rem', fontWeight: 'normal', color: 'var(--text-secondary)'}}>using Machine Learning</span></h1>
+        <h1>Climate Dashboard <span style={{fontSize: '1.2rem', fontWeight: 'normal', color: 'var(--text-secondary)'}}>using Machine Learning</span></h1>
         <p>Premium Real-Time Weather Prediction & Live Data</p>
       </header>
 
@@ -105,7 +105,7 @@ function App() {
              <ThermometerSun size={28} />
           </div>
           <div className="kpi-content">
-             <h3>Latest Global Avg Temp</h3>
+             <h3>Latest Avg Temp</h3>
              <div className="value">{loading ? '...' : `${latestAvg.toFixed(2)}°F`}</div>
           </div>
         </div>
@@ -134,7 +134,7 @@ function App() {
       <div className="main-content">
         <div className="glass-panel chart-section">
           <div className="chart-header">
-            <h2>Historical Global Temperatures (1850+)</h2>
+            <h2>Historical Temperatures (1850+)</h2>
             <div style={{color: "var(--text-secondary)"}}>Land & Ocean Average</div>
           </div>
           <div style={{ width: '100%', height: 400 }}>
@@ -159,7 +159,7 @@ function App() {
                   <Area 
                     type="monotone" 
                     dataKey="LandAndOceanAverageTemperature" 
-                    name="Global Avg (°F)"
+                    name="Avg (°F)"
                     stroke="#00f2fe" 
                     strokeWidth={3}
                     fillOpacity={1} 
@@ -215,7 +215,7 @@ function App() {
           </div>
 
           <div className="prediction-section">
-            <h2>ML Global Predictor</h2>
+            <h2>ML Predictor</h2>
           <form onSubmit={handlePredict}>
             <div className="form-group">
               <label>Land Average Temperature (°F)</label>

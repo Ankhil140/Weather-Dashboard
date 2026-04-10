@@ -11,8 +11,8 @@ def c_to_f(celsius_temp):
 
 def train_and_export():
     print("Loading data...")
-    # Go up one folder as the script will be in backend/
-    csv_path = os.path.join(os.path.dirname(__file__), '..', 'GlobalTemperatures.csv')
+    # Script runs inside the api/ folder with the csv
+    csv_path = os.path.join(os.path.dirname(__file__), 'Temperatures.csv')
     df = pd.read_csv(csv_path)
 
     print("Preprocessing data...")
