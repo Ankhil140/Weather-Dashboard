@@ -1,45 +1,25 @@
-# Climate Dashboard using Machine Learning
+# Advanced Live Weather Dashboard
 
-This repository contains a full-stack, premium web application that implements a machine learning model to predict temperatures using historical climate data. Initially based on the "Predict Weather with Machine Learning" tutorial, it has been expanded into a live Interactive Dashboard deployed on Vercel.
+A premium, React-based web application that provides real-time and 10-day forecasts for any city across the globe. Built meticulously using Vite, React 19, and the Open-Meteo REST API, this dashboard delivers highly responsive performance draped in a beautiful glassmorphism aesthetic.
 
-## Project Overview
+## Features
 
-The project demonstrates an end-to-end data science and full-stack workflow:
-1. **Machine Learning**: An exploratory Jupyter Notebook (`predict_weather.ipynb`) that cleans the `Temperatures.csv` dataset and trains a Random Forest Regressor to predict the `LandAndOceanAverageTemperature`.
-2. **Serverless API**: A Python Flask backend (`/api`) that exposes live predictions and leverages `@vercel/python` for scalable deployment.
-3. **Live Dashboard**: A beautiful Vite/React frontend designed with premium Glassmorphism aesthetics that consumes both the ML predictions and live REST APIs (Open-Meteo) to provide real-time weather tracking.
-
-## Tools & Libraries Used
-
-* **Frontend**: React 19, Vite, Recharts, Lucide-React, Vanilla Custom CSS
-* **Backend**: Python 3, Flask, Pandas, Scikit-Learn, Joblib
-* **APIs**: Open-Meteo (Free Geocoding & Live Weather)
-
-## Model Performance
-
-*   **Baseline MAE**: 2.04 degrees Fahrenheit
-*   **Model MAE**: 0.25 degrees Fahrenheit
-*   **Model Accuracy**: ~99.58%
-
-The Random Forest Regressor significantly outperforms the baseline moving average model, achieving high accuracy in predicting terrestrial and oceanic temperatures.
+1. **Auto Geolocation API**: Pinpoints your exact location natively and displays a customized 10-day graph of your current conditions without typing.
+2. **Dynamic Charting**: Fully responsive double Area Charts built in Recharts visualize both 5-day historical bounds and 5-day predictive bounds (Daily Min & Daily Max curves).
+3. **Celsius / Fahrenheit Binding**: Instantly swap entire metric systems across all elements, graphs, and windspeeds.
+4. **Persistent Saved Locations**: Star your favorite cities! `localStorage` binds these to your browser so they are easily accessible each time you sign in.
 
 ## Deployment (Vercel)
 
-This repository is structured as a Vercel Monorepo. 
-To launch it online:
-1. Import this repository to your [Vercel](https://vercel.com/) dashboard.
-2. Vercel will automatically build the React frontend and deploy the `/api` directory as serverless backend functions.
+This responsive application handles all computations natively in the React client and uses external open-source weather APIs for logic. It is completely ready to drop into a standard Vercel environment!
+
+1. Import this GitHub repository into your Vercel Dashboard.
+2. Ensure Vercel detects `Vite` as the framework preset!
+3. Vercel will build and distribute it automatically over its global Edge Network.
 
 ## Local Development
 
-To run the application locally:
 ```bash
-# Terminal 1: Frontend
 npm install
 npm run dev
-
-# Terminal 2: Backend API
-cd api
-pip install -r requirements.txt
-python index.py
 ```
