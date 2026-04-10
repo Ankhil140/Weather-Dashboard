@@ -3,7 +3,7 @@ import axios from 'axios';
 import { 
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend 
 } from 'recharts';
-import { ThermometerSun, AlertTriangle, TrendingUp, Activity, Cpu, Search, MapPin, Wind, Star } from 'lucide-react';
+import { ThermometerSun, AlertTriangle, TrendingUp, Activity, Cpu, Search, MapPin, Wind, Star, LocateFixed } from 'lucide-react';
 import './index.css';
 
 function App() {
@@ -104,6 +104,52 @@ function App() {
     } finally {
       setSearching(false);
     }
+  };
+
+  const handleAutoLocate = () => {
+    if (!navigator.geolocation) {
+      setSearchError('Geolocation is not supported by your browser');
+      return;
+    }
+    setSearching(true);
+    setSearchError('');
+    
+    navigator.geolocation.getCurrentPosition(async (position) => {
+      try {
+        const { latitude, longitude } = position.coords;
+        
+        const bdRes = await axios.get(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`);
+        const name = bdRes.data.city || bdRes.data.locality || 'Current Location';
+        const country = bdRes.data.countryName || '';
+
+        const weatherRes = await axios.get(`https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current_weather=true&temperature_unit=fahrenheit&windspeed_unit=mph&daily=temperature_2m_max,temperature_2m_min&past_days=5&forecast_days=6`);
+        
+        if(weatherRes.data.current_weather && weatherRes.data.daily) {
+          setLocalWeather({
+            temperature: weatherRes.data.current_weather.temperature,
+            windspeed: weatherRes.data.current_weather.windspeed,
+            name,
+            country
+          });
+          
+          const daily = weatherRes.data.daily;
+          const forecastArray = daily.time.map((t, idx) => ({
+            date: t,
+            maxF: daily.temperature_2m_max[idx],
+            minF: daily.temperature_2m_min[idx]
+          }));
+          setLocalForecast(forecastArray);
+          setCitySearch(name); // Fill input with location
+        }
+      } catch(err) {
+        setSearchError('Error fetching location weather');
+      } finally {
+        setSearching(false);
+      }
+    }, () => {
+      setSearchError('Unable to retrieve your location. Check browser permissions.');
+      setSearching(false);
+    });
   };
 
   const handleCitySearch = (e) => {
@@ -302,8 +348,11 @@ function App() {
                 required
                 style={{flex: 1}}
               />
-              <button type="submit" className="glass-button" disabled={searching} style={{width: "auto", padding: "0.8rem 1.2rem"}}>
+              <button type="submit" className="glass-button" disabled={searching} title="Search City" style={{width: "auto", padding: "0.8rem 1.2rem"}}>
                 {searching ? '...' : <Search size={20} />}
+              </button>
+              <button type="button" onClick={handleAutoLocate} className="glass-button" disabled={searching} title="Auto Locate Me" style={{width: "auto", padding: "0.8rem 1.2rem", background: "rgba(255,255,255,0.1)"}}>
+                <LocateFixed size={20} color="var(--accent-secondary)" />
               </button>
             </form>
 
